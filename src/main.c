@@ -21,31 +21,19 @@ pthread_cond_t card_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t carp_cond = PTHREAD_COND_INITIALIZER;
 
 
+// int mA,mB,gA,gB = 0;
+int comD, comP, carD, carP = 0;
 
-// void * comercialDecolando(void * meuid);
-// void * comercialPousando (void * meuid);
-// void * cargueiroDecolando (void * meuid);
-// void * cargueiroPousando (void * meuid);
+// int carD_Esperando = 0;
+// int carP_Esperando = 0;
 
-
-// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-// pthread_cond_t comd_cond = PTHREAD_COND_INITIALIZER;
-// pthread_cond_t comp_cond = PTHREAD_COND_INITIALIZER;
-// pthread_cond_t card_cond = PTHREAD_COND_INITIALIZER;
-// pthread_cond_t carp_cond = PTHREAD_COND_INITIALIZER;
-
-
-
-
-
-
-
-int mA,mB,gA,gB = 0;
-
-int gaQuer = 0;
-int gbQuer = 0;
+int carD_Esperando = 0;
+int carP_Esperando = 0;
 
 int bloqueio_pista = 0; 
+int bloqueio_pista_decolagem = 0;
+int bloqueio_pista_aterrisagem = 0;
+
 
 void main(argc, argv)
 int argc;
@@ -114,21 +102,21 @@ void * comercialDecolando(void * a){
   while(1){
     sleep(rand()%(i+1));
     pthread_mutex_lock(&mutex);
-      if(mB > 0){
+      if(comP > 0){
         bloqueio_pista = 0;
       }
-      while(bloqueio_pista != 0 || gaQuer != 0 || gbQuer != 0 || mB > 0 || gA > 0 || gB > 0) {
+      while(bloqueio_pista != 0 || carD_Esperando != 0 || carP_Esperando != 0 || comP > 0 || carD > 0 || carP > 0) {
         pthread_cond_wait(&comd_cond,&mutex);
       }
 
-      mA++;
+      comD++;
     pthread_mutex_unlock(&mutex);
-    printf("Avião comercial %d decolando \n",i);
+    printf(" ^  Avião comercial %d decolando \n",i);
     sleep(1);
     pthread_mutex_lock(&mutex);
-      mA--;
-      printf("Avião comercial %d decolou num: %d\n" ,i,mA);
-      if(mA == 0){
+      comD--;
+      printf(" -- Avião comercial %d decolou num: %d\n" ,i,comD);
+      if(comD == 0){
         pthread_cond_broadcast(&comp_cond);
         pthread_cond_signal(&card_cond);
         pthread_cond_signal(&carp_cond);
@@ -143,21 +131,21 @@ void * comercialPousando(void * a){
   while(1){
     sleep(rand()%(i+1));
     pthread_mutex_lock(&mutex);
-      if(mA > 0){
+      if(comD > 0){
           bloqueio_pista = 1;
       }
-      while(bloqueio_pista != 1 || gaQuer != 0 || gbQuer != 0 || mA > 0 || gA > 0 || gB > 0) {
+      while(bloqueio_pista != 1 || carD_Esperando != 0 || carP_Esperando != 0 || comD > 0 || carD > 0 || carP > 0) {
         pthread_cond_wait(&comp_cond,&mutex);
       }
 
-	    mB++;
+	    comP++;
 	  pthread_mutex_unlock(&mutex);
-    printf("Avião comercial %d pousando \n",i);
+    printf(" v Avião comercial %d pousando \n",i);
     sleep(1);
     pthread_mutex_lock(&mutex);
-	    mB--;
-      printf("Avião comercial %d pousou; num: %d\n" ,i,mB);
-	    if(mB == 0){
+	    comP--;
+      printf(" _ Avião comercial %d pousou; num: %d\n" ,i,comP);
+	    if(comP == 0){
         pthread_cond_broadcast(&comd_cond);
         pthread_cond_signal(&card_cond);
         pthread_cond_signal(&carp_cond);
@@ -173,22 +161,22 @@ void * cargueiroDecolando(void * a){
     while(1){
       sleep(rand()%(i+1)+2);
       pthread_mutex_lock(&mutex);
-        gaQuer++;
-              while(mA > 0 || mB > 0 || gA > 0 || gB > 0) {
-            pthread_cond_wait(&card_cond,&mutex);
-            }
-              gaQuer--;
-              gA++;
+        carD_Esperando++;
+        while(comD > 0 || comP > 0 || carD > 0 || carP > 0) {
+          pthread_cond_wait(&card_cond,&mutex);
+        }
+        carD_Esperando--;
+        carD++;
       pthread_mutex_unlock(&mutex);
-      printf("Cargueiro %d decolando \n",i);
+      printf(" ^  Cargueiro %d decolando \n",i);
       sleep(5);
       pthread_mutex_lock(&mutex);
-      gA--;
-      printf("Cargueiro %d pousando; num: %d\n",i,gA);
-      pthread_cond_broadcast(&comd_cond);
-      pthread_cond_broadcast(&comp_cond);
-      pthread_cond_signal(&card_cond);
-      pthread_cond_signal(&carp_cond);
+        carD--;
+        printf(" -- Cargueiro %d decolou; num: %d\n",i,carD);
+        pthread_cond_broadcast(&comd_cond);
+        pthread_cond_broadcast(&comp_cond);
+        pthread_cond_signal(&card_cond);
+        pthread_cond_signal(&carp_cond);
       pthread_mutex_unlock(&mutex);
     }
   pthread_exit(0);
@@ -201,23 +189,23 @@ void * cargueiroPousando(void * a){
   while(1){
     sleep(rand()%(i+1)+10);
     pthread_mutex_lock(&mutex);
-      gbQuer++;
-      while(mA > 0 || mB > 0 || gA > 0 || gB > 0) {
+      carP_Esperando++;
+      while(comD > 0 || comP > 0 || carD > 0 || carP > 0) {
         pthread_cond_wait(&carp_cond,&mutex);
       }
-      gbQuer--;
-      gB++;
+      carP_Esperando--;
+      carP++;
 	  pthread_mutex_unlock(&mutex);
-	  printf("Cargueir %d pousando\n",i);
+	  printf(" V  Cargueir %d pousando\n",i);
     sleep(5);
     pthread_mutex_lock(&mutex);
-      gB--;
-      printf("Cargueiro %d pousou; num: %d\n" ,i,gB);
+      carP--;
+      printf(" _  Cargueiro %d pousou; num: %d\n" ,i,carP);
       pthread_cond_broadcast(&comd_cond);
       pthread_cond_broadcast(&comp_cond);
       pthread_cond_signal(&card_cond);
       pthread_cond_signal(&carp_cond);
     pthread_mutex_unlock(&mutex);
-    }
+  }
   pthread_exit(0);
 }
