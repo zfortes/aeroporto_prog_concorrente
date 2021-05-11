@@ -1,3 +1,6 @@
+José Fortes Neto - 160128331
+Segurança computacional
+
 Um aeroporto possui duas pistas.
 Uma pra pouso e outro pra decolagem.
 Um aviao normal pode aterrissar em uma pista enquanto outro decola na outra pista.
