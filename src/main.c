@@ -29,6 +29,9 @@ int comD, comP, carD, carP = 0;
 
 int carD_Esperando = 0;
 int carP_Esperando = 0;
+int comP_Esperando = 0;
+int comD_Esperando = 0;
+
 
 int bloqueio_pista = 0; 
 int bloqueio_pista_decolagem = 0;
@@ -102,22 +105,20 @@ void * comercialDecolando(void * a){
   while(1){
     sleep(rand()%(i+1));
     pthread_mutex_lock(&mutex);
-      if(comP > 0){
-        bloqueio_pista = 0;
-      }
-      while(bloqueio_pista != 0 || carD_Esperando != 0 || carP_Esperando != 0 || comP > 0 || carD > 0 || carP > 0) {
+      comD_Esperando++;
+      while(comD > 0 || carD > 0 || carP > 0) {
         pthread_cond_wait(&comd_cond,&mutex);
       }
-
+      comD_Esperando--;
       comD++;
     pthread_mutex_unlock(&mutex);
-    printf(" ^  Avião comercial %d decolando \n",i);
+    printf(" D ?  Avião comercial %d decolando \n",i);
     sleep(1);
     pthread_mutex_lock(&mutex);
       comD--;
-      printf(" -- Avião comercial %d decolou num: %d\n" ,i,comD);
+      printf(" D + Avião comercial %d decolou \n" ,i);
       if(comD == 0){
-        pthread_cond_broadcast(&comp_cond);
+        pthread_cond_signal(&comd_cond);
         pthread_cond_signal(&card_cond);
         pthread_cond_signal(&carp_cond);
       }
@@ -131,27 +132,25 @@ void * comercialPousando(void * a){
   while(1){
     sleep(rand()%(i+1));
     pthread_mutex_lock(&mutex);
-      if(comD > 0){
-          bloqueio_pista = 1;
-      }
-      while(bloqueio_pista != 1 || carD_Esperando != 0 || carP_Esperando != 0 || comD > 0 || carD > 0 || carP > 0) {
+      comP_Esperando++;
+      while(comP > 0 || carD > 0 || carP > 0) {
         pthread_cond_wait(&comp_cond,&mutex);
       }
-
+      comP_Esperando--;
 	    comP++;
 	  pthread_mutex_unlock(&mutex);
-    printf(" v Avião comercial %d pousando \n",i);
+    printf(" P ? Avião comercial %d pousando \n",i);
     sleep(1);
     pthread_mutex_lock(&mutex);
 	    comP--;
-      printf(" _ Avião comercial %d pousou; num: %d\n" ,i,comP);
+      printf(" P + Avião comercial %d pousou \n" ,i);
 	    if(comP == 0){
-        pthread_cond_broadcast(&comd_cond);
+        pthread_cond_signal(&comp_cond);
         pthread_cond_signal(&card_cond);
         pthread_cond_signal(&carp_cond);
       }
-      pthread_mutex_unlock(&mutex);
-    }
+    pthread_mutex_unlock(&mutex);
+  }
   pthread_exit(0);
 }
 
@@ -168,13 +167,13 @@ void * cargueiroDecolando(void * a){
         carD_Esperando--;
         carD++;
       pthread_mutex_unlock(&mutex);
-      printf(" ^  Cargueiro %d decolando \n",i);
+      printf("  D ? Cargueiro %d decolando \n",i);
       sleep(5);
       pthread_mutex_lock(&mutex);
         carD--;
-        printf(" -- Cargueiro %d decolou; num: %d\n",i,carD);
-        pthread_cond_broadcast(&comd_cond);
-        pthread_cond_broadcast(&comp_cond);
+        printf("  D + Cargueiro %d decolou \n",i);
+        pthread_cond_signal(&comd_cond);
+        pthread_cond_signal(&comp_cond);
         pthread_cond_signal(&card_cond);
         pthread_cond_signal(&carp_cond);
       pthread_mutex_unlock(&mutex);
@@ -196,13 +195,13 @@ void * cargueiroPousando(void * a){
       carP_Esperando--;
       carP++;
 	  pthread_mutex_unlock(&mutex);
-	  printf(" V  Cargueir %d pousando\n",i);
+	  printf("   P ? Cargueiro %d pousando\n",i);
     sleep(5);
     pthread_mutex_lock(&mutex);
       carP--;
-      printf(" _  Cargueiro %d pousou; num: %d\n" ,i,carP);
-      pthread_cond_broadcast(&comd_cond);
-      pthread_cond_broadcast(&comp_cond);
+      printf("   P + Cargueiro %d pousou \n" ,i);
+      pthread_cond_signal(&comd_cond);
+      pthread_cond_signal(&comp_cond);
       pthread_cond_signal(&card_cond);
       pthread_cond_signal(&carp_cond);
     pthread_mutex_unlock(&mutex);
